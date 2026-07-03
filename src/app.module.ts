@@ -1,7 +1,10 @@
-import { Module } from '@nestjs/common';
+import { Module, ValidationPipe } from '@nestjs/common';
+import { APP_PIPE } from '@nestjs/core';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
+import { AccountsModule } from './accounts/accounts.module';
+import { TransactionsModule } from './transactions/transactions.module';
 
 @Module({
   imports: [
@@ -16,8 +19,21 @@ import { AppService } from './app.service';
       migrations: [__dirname + '/migrations/*{.ts,.js}'],
       synchronize: false, // Never true in production — use migrations
     }),
+    AccountsModule,
+    TransactionsModule,
   ],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [
+    AppService,
+    {
+      provide: APP_PIPE,
+      useValue: new ValidationPipe({
+        whitelist: true,
+        forbidNonWhitelisted: true,
+        transform: true,
+        transformOptions: { enableImplicitConversion: false },
+      }),
+    },
+  ],
 })
 export class AppModule {}
