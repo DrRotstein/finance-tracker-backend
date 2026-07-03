@@ -12,7 +12,7 @@ import {
   HttpStatus,
 } from '@nestjs/common';
 import { AccountsService } from './accounts.service';
-import { CreateAccountDto, UpdateAccountDto, QueryAccountDto } from './dto';
+import { CreateAccountDto, UpdateAccountDto, QueryAccountDto, QueryBalanceDto } from './dto';
 
 @Controller('accounts')
 export class AccountsController {
@@ -24,6 +24,11 @@ export class AccountsController {
       type: query.type,
       isExternal: query.is_external,
     });
+  }
+
+  @Get('balances')
+  async getBalances(@Query() query: QueryBalanceDto) {
+    return this.accountsService.getBalances(query.include_external);
   }
 
   @Get(':id')

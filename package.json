@@ -1,11 +1,11 @@
 {
   "name": "finance-tracker-backend",
   "version": "0.1.0",
-  "description": "Finance Tracker — NestJS backend API",
+  "description": "Finance Tracker \u2014 NestJS backend API",
   "private": true,
   "license": "UNLICENSED",
   "scripts": {
-    "build": "nest build",
+    "build": "tsc -p tsconfig.build.json",
     "start": "nest start",
     "start:dev": "nest start --watch",
     "start:debug": "nest start --debug --watch",
