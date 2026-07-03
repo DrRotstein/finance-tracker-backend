@@ -2,6 +2,17 @@
 
 NestJS + TypeScript REST API for the Finance Tracker application.
 
+## Quick Start
+
+```bash
+git clone https://github.com/DrRotstein/finance-tracker-backend.git
+git clone https://github.com/DrRotstein/finance-tracker-frontend.git
+cd finance-tracker-backend
+docker compose up --build
+```
+
+Then open http://localhost:5173 (frontend) and http://localhost:4000 (backend API).
+
 ## Tech Stack
 
 - **Runtime:** Node.js 20 LTS
@@ -26,20 +37,21 @@ NestJS + TypeScript REST API for the Finance Tracker application.
 npm install
 
 # Start PostgreSQL via Docker
-docker-compose up -d postgres
+docker compose up -d postgres
 
 # Run in development mode
 npm run start:dev
 ```
 
-### Docker
+### Docker (Full Stack)
 
 ```bash
-# Build and run all services
-docker-compose up --build
+# Build and run all services (backend + frontend + postgres)
+docker compose up --build
 ```
 
 The API will be available at `http://localhost:4000`.
+The frontend will be available at `http://localhost:5173`.
 
 ## Project Structure
 
@@ -48,8 +60,13 @@ src/
 ├── app.module.ts          # Root module
 ├── app.controller.ts      # Health check endpoint
 ├── app.service.ts         # App service
+├── data-source.ts         # TypeORM DataSource for CLI migrations
 ├── main.ts                # Entry point
-└── modules/               # Feature modules (added per Epic)
+├── entities/              # Database entities
+├── migrations/            # TypeORM migrations
+├── accounts/              # Accounts module
+├── transactions/          # Transactions module
+└── relations/             # Relations module
 ```
 
 ## Environment Variables
