@@ -5,10 +5,12 @@ import { Account } from '../entities/account.entity';
 import { TransactionRelationMember } from '../entities/transaction-relation-member.entity';
 import { TransactionsController } from './transactions.controller';
 import { TransactionsService } from './transactions.service';
+import { RelationsModule } from '../relations/relations.module';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([Transaction, Account, TransactionRelationMember]),
+    RelationsModule,
   ],
   controllers: [TransactionsController],
   providers: [TransactionsService],

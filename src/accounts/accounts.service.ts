@@ -102,6 +102,46 @@ export class AccountsService {
     await this.accountRepo.remove(account);
   }
 
+  async getBalances(includeExternal?: boolean): Promise<{
+    accounts: {
+      id: string;
+      name: string;
+      type: AccountType;
+      currency: string;
+      startingBalance: number;
+      currentBalance: number;
+    }[];
+    totalBalance: number;
+  }> {
+    const qb = this.accountRepo.createQueryBuilder('a');
+
+    if (!includeExternal) {
+      qb.where('a.is_external = :isExternal', { isExternal: false });
+    }
+
+    const accounts = await qb.getMany();
+    const withBalances = await this.attachCurrentBalances(accounts);
+
+    const accountsResult = withBalances.map((a) => ({
+      id: a.id,
+      name: a.name,
+      type: a.type,
+      currency: a.currency,
+      startingBalance: Number(a.startingBalance),
+      currentBalance: a.currentBalance,
+    }));
+
+    const totalBalance = accountsResult
+      .filter((a) => {
+        // Only sum non-external accounts for total
+        const original = accounts.find((acc) => acc.id === a.id);
+        return original && !original.isExternal;
+      })
+      .reduce((sum, a) => sum + a.currentBalance, 0);
+
+    return { accounts: accountsResult, totalBalance };
+  }
+
   private async attachCurrentBalances(
     accounts: Account[],
   ): Promise<(Account & { currentBalance: number })[]> {
