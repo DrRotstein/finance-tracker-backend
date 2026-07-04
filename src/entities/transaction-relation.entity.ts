@@ -8,7 +8,6 @@ import {
 import { TransactionRelationMember } from './transaction-relation-member.entity';
 
 export enum RelationType {
-  TRANSFER_PAIR = 'transfer_pair',
   GROUP = 'group',
 }
 
