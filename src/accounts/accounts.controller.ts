@@ -3,6 +3,7 @@ import {
   Get,
   Post,
   Put,
+  Patch,
   Delete,
   Param,
   Body,
@@ -44,6 +45,14 @@ export class AccountsController {
 
   @Put(':id')
   async update(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: UpdateAccountDto,
+  ) {
+    return this.accountsService.update(id, dto);
+  }
+
+  @Patch(':id')
+  async partialUpdate(
     @Param('id', ParseUUIDPipe) id: string,
     @Body() dto: UpdateAccountDto,
   ) {
