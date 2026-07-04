@@ -4,7 +4,6 @@ import {
   IsOptional,
   IsUUID,
   IsDateString,
-  MaxLength,
   Min,
 } from 'class-validator';
 
@@ -26,10 +25,9 @@ export class UpdateTransactionDto {
   @IsOptional()
   date?: string;
 
-  @IsString()
-  @MaxLength(50)
+  @IsUUID()
   @IsOptional()
-  category?: string | null;
+  categoryId?: string | null;
 
   @IsString()
   @IsOptional()

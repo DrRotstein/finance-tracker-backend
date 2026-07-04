@@ -20,9 +20,9 @@ export class QueryTransactionDto {
   @IsOptional()
   account_id?: string;
 
-  @IsString()
+  @IsUUID()
   @IsOptional()
-  category?: string;
+  category_id?: string;
 
   @IsDateString()
   @IsOptional()
