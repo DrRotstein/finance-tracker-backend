@@ -1,7 +1,7 @@
 {
   "name": "finance-tracker-backend",
   "version": "0.1.0",
-  "description": "Finance Tracker — NestJS backend API",
+  "description": "Finance Tracker \u2014 NestJS backend API",
   "private": true,
   "license": "UNLICENSED",
   "scripts": {
@@ -20,6 +20,7 @@
   },
   "dependencies": {
     "@nestjs/common": "^10.0.0",
+    "@nestjs/config": "^3.0.0",
     "@nestjs/core": "^10.0.0",
     "@nestjs/platform-express": "^10.0.0",
     "@nestjs/typeorm": "^10.0.0",
