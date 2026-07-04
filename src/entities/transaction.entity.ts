@@ -9,6 +9,7 @@ import {
   Index,
 } from 'typeorm';
 import { Account } from './account.entity';
+import { Category } from './category.entity';
 import { Loan } from './loan.entity';
 
 export enum TransactionType {
@@ -26,8 +27,8 @@ export enum TransactionType {
 @Index('idx_transactions_to_account', ['toAccountId'], {
   where: '"to_account_id" IS NOT NULL',
 })
-@Index('idx_transactions_category', ['category'], {
-  where: '"category" IS NOT NULL',
+@Index('idx_transactions_category_id', ['categoryId'], {
+  where: '"category_id" IS NOT NULL',
 })
 @Index('idx_transactions_loan', ['loanId'], {
   where: '"loan_id" IS NOT NULL',
@@ -69,8 +70,12 @@ export class Transaction {
   @Column({ type: 'date' })
   date: string;
 
-  @Column({ type: 'varchar', length: 50, nullable: true })
-  category: string | null;
+  @Column({ name: 'category_id', type: 'uuid', nullable: true })
+  categoryId: string | null;
+
+  @ManyToOne(() => Category, { nullable: true, onDelete: 'SET NULL' })
+  @JoinColumn({ name: 'category_id' })
+  category: Category | null;
 
   @Column({ type: 'text', nullable: true })
   description: string | null;
