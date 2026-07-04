@@ -9,6 +9,11 @@ import { Repository } from 'typeorm';
 import { Transaction, TransactionType } from '../entities/transaction.entity';
 import { Account } from '../entities/account.entity';
 import { TransactionRelationMember } from '../entities/transaction-relation-member.entity';
+import {
+  TransactionRelation,
+  RelationType,
+} from '../entities/transaction-relation.entity';
+import { MemberRole } from '../entities/transaction-relation-member.entity';
 import { CreateTransactionDto, UpdateTransactionDto } from './dto';
 
 export interface PaginatedResult<T> {
@@ -30,6 +35,8 @@ export class TransactionsService {
     private readonly accountRepo: Repository<Account>,
     @InjectRepository(TransactionRelationMember)
     private readonly relationMemberRepo: Repository<TransactionRelationMember>,
+    @InjectRepository(TransactionRelation)
+    private readonly relationRepo: Repository<TransactionRelation>,
   ) {}
 
   async findAll(filters: {
@@ -131,6 +138,12 @@ export class TransactionsService {
     });
 
     const saved = await this.transactionRepo.save(transaction);
+
+    // BUG-003: Auto-pairing for transfers involving external accounts
+    if (dto.type === TransactionType.TRANSFER) {
+      await this.handleAutoPairing(saved);
+    }
+
     return this.findOne(saved.id);
   }
 
@@ -356,5 +369,107 @@ export class TransactionsService {
     };
 
     return { months, summary };
+  }
+
+  /**
+   * BUG-003: Auto-pairing for transfers involving external accounts.
+   * When a transfer is created where either account is external:
+   * 1. Check if there's an existing outstanding transfer_pair between the same two accounts
+   *    with the same amount in the opposite direction — if so, add this as the matching member.
+   * 2. Otherwise, create a new transfer_pair with this transaction as the sole member.
+   */
+  private async handleAutoPairing(transaction: Transaction): Promise<void> {
+    // Load accounts to check isExternal
+    const fromAccount = transaction.fromAccountId
+      ? await this.accountRepo.findOne({ where: { id: transaction.fromAccountId } })
+      : null;
+    const toAccount = transaction.toAccountId
+      ? await this.accountRepo.findOne({ where: { id: transaction.toAccountId } })
+      : null;
+
+    // Only auto-pair if at least one account is external
+    const hasExternal =
+      (fromAccount && fromAccount.isExternal) ||
+      (toAccount && toAccount.isExternal);
+    if (!hasExternal) return;
+
+    // Determine the role for this transaction:
+    // If from_account is the user's (not external) and to_account is external => outgoing (user lends)
+    // If to_account is the user's (not external) and from_account is external => incoming (user receives back)
+    let role: MemberRole;
+    if (fromAccount && !fromAccount.isExternal && toAccount && toAccount.isExternal) {
+      role = MemberRole.OUTGOING;
+    } else if (toAccount && !toAccount.isExternal && fromAccount && fromAccount.isExternal) {
+      role = MemberRole.INCOMING;
+    } else {
+      // Both external or both internal — don't auto-pair
+      return;
+    }
+
+    // Try to find an existing outstanding transfer_pair (with 1 member) between same accounts, same amount, opposite direction
+    const oppositeRole = role === MemberRole.OUTGOING ? MemberRole.INCOMING : MemberRole.OUTGOING;
+
+    // For matching: if this is outgoing (A->B), look for an existing pair with an incoming member (B->A) or
+    // if this is incoming (B->A), look for an existing pair with an outgoing member (A->B)
+    const existingPairs = await this.relationRepo
+      .createQueryBuilder('r')
+      .leftJoinAndSelect('r.members', 'members')
+      .leftJoinAndSelect('members.transaction', 'tx')
+      .where('r.type = :type', { type: RelationType.TRANSFER_PAIR })
+      .getMany();
+
+    // Filter to outstanding pairs (exactly 1 member) with opposite role, same accounts (reversed), same amount
+    const matchingPair = existingPairs.find((r) => {
+      if (r.members.length !== 1) return false;
+      const existingMember = r.members[0];
+      if (existingMember.role !== oppositeRole) return false;
+
+      const existingTx = existingMember.transaction;
+      if (!existingTx) return false;
+
+      // Check same amount
+      if (Number(existingTx.amount) !== Number(transaction.amount)) return false;
+
+      // Check accounts are reversed
+      if (role === MemberRole.INCOMING) {
+        // This tx: external -> user (incoming). Existing should be: user -> external (outgoing)
+        // existingTx.fromAccountId should be our toAccountId, existingTx.toAccountId should be our fromAccountId
+        return (
+          existingTx.fromAccountId === transaction.toAccountId &&
+          existingTx.toAccountId === transaction.fromAccountId
+        );
+      } else {
+        // This tx: user -> external (outgoing). Existing should be: external -> user (incoming)
+        // existingTx.fromAccountId should be our toAccountId, existingTx.toAccountId should be our fromAccountId
+        return (
+          existingTx.fromAccountId === transaction.toAccountId &&
+          existingTx.toAccountId === transaction.fromAccountId
+        );
+      }
+    });
+
+    if (matchingPair) {
+      // Add this transaction as the matching member to complete the pair
+      const member = this.relationMemberRepo.create({
+        relationId: matchingPair.id,
+        transactionId: transaction.id,
+        role,
+      });
+      await this.relationMemberRepo.save(member);
+    } else {
+      // Create a new transfer_pair with this transaction as the sole member
+      const relation = this.relationRepo.create({
+        type: RelationType.TRANSFER_PAIR,
+        label: null,
+      });
+      const savedRelation = await this.relationRepo.save(relation);
+
+      const member = this.relationMemberRepo.create({
+        relationId: savedRelation.id,
+        transactionId: transaction.id,
+        role,
+      });
+      await this.relationMemberRepo.save(member);
+    }
   }
 }

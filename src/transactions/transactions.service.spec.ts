@@ -9,12 +9,14 @@ import { TransactionsService } from './transactions.service';
 import { Transaction, TransactionType } from '../entities/transaction.entity';
 import { Account, AccountType } from '../entities/account.entity';
 import { TransactionRelationMember } from '../entities/transaction-relation-member.entity';
+import { TransactionRelation } from '../entities/transaction-relation.entity';
 
 describe('TransactionsService', () => {
   let service: TransactionsService;
   let transactionRepo: any;
   let accountRepo: any;
   let relationMemberRepo: any;
+  let relationRepo: any;
 
   const mockAccount: Account = {
     id: '550e8400-e29b-41d4-a716-446655440000',
@@ -66,6 +68,18 @@ describe('TransactionsService', () => {
 
     relationMemberRepo = {
       delete: jest.fn().mockResolvedValue({ affected: 0 }),
+      create: jest.fn().mockImplementation((data) => data),
+      save: jest.fn().mockResolvedValue({}),
+    };
+
+    relationRepo = {
+      createQueryBuilder: jest.fn().mockReturnValue({
+        leftJoinAndSelect: jest.fn().mockReturnThis(),
+        where: jest.fn().mockReturnThis(),
+        getMany: jest.fn().mockResolvedValue([]),
+      }),
+      create: jest.fn().mockImplementation((data) => ({ id: 'rel-id', ...data })),
+      save: jest.fn().mockImplementation((data) => Promise.resolve({ id: 'rel-id', ...data })),
     };
 
     const module: TestingModule = await Test.createTestingModule({
@@ -79,6 +93,10 @@ describe('TransactionsService', () => {
         {
           provide: getRepositoryToken(TransactionRelationMember),
           useValue: relationMemberRepo,
+        },
+        {
+          provide: getRepositoryToken(TransactionRelation),
+          useValue: relationRepo,
         },
       ],
     }).compile();
