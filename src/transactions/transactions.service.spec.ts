@@ -38,7 +38,8 @@ describe('TransactionsService', () => {
     toAccountId: null,
     toAccount: null,
     date: '2026-07-01',
-    category: 'food',
+    categoryId: null,
+    category: null,
     description: 'Groceries',
     createdAt: new Date(),
     updatedAt: new Date(),
@@ -78,8 +79,14 @@ describe('TransactionsService', () => {
         where: jest.fn().mockReturnThis(),
         getMany: jest.fn().mockResolvedValue([]),
       }),
-      create: jest.fn().mockImplementation((data) => ({ id: 'rel-id', ...data })),
-      save: jest.fn().mockImplementation((data) => Promise.resolve({ id: 'rel-id', ...data })),
+      create: jest
+        .fn()
+        .mockImplementation((data) => ({ id: 'rel-id', ...data })),
+      save: jest
+        .fn()
+        .mockImplementation((data) =>
+          Promise.resolve({ id: 'rel-id', ...data }),
+        ),
     };
 
     const module: TestingModule = await Test.createTestingModule({
@@ -154,9 +161,36 @@ describe('TransactionsService', () => {
         amount: 50,
         fromAccountId: mockAccount.id,
         date: '2026-07-01',
-        category: 'food',
       });
       expect(result.type).toBe(TransactionType.EXPENSE);
+    });
+
+    it('should create a transaction with categoryId', async () => {
+      const categoryId = '770e8400-e29b-41d4-a716-446655440000';
+      accountRepo.findOne.mockResolvedValue(mockAccount);
+      transactionRepo.create.mockReturnValue({
+        ...mockTransaction,
+        categoryId,
+      });
+      transactionRepo.save.mockResolvedValue({
+        ...mockTransaction,
+        categoryId,
+      });
+      transactionRepo.findOne.mockResolvedValue({
+        ...mockTransaction,
+        categoryId,
+      });
+
+      const result = await service.create({
+        type: TransactionType.EXPENSE,
+        amount: 50,
+        fromAccountId: mockAccount.id,
+        date: '2026-07-01',
+        categoryId,
+      });
+      expect(transactionRepo.create).toHaveBeenCalledWith(
+        expect.objectContaining({ categoryId }),
+      );
     });
 
     it('should throw BadRequestException if expense has no fromAccountId', async () => {
@@ -210,13 +244,30 @@ describe('TransactionsService', () => {
       transactionRepo.save.mockResolvedValue(mockTransaction);
       accountRepo.findOne.mockResolvedValue(mockAccount);
 
-      // For the findOne call after save
       transactionRepo.findOne
         .mockResolvedValueOnce({ ...mockTransaction })
         .mockResolvedValueOnce(mockTransaction);
 
-      const result = await service.update(mockTransaction.id, { amount: 75 });
+      await service.update(mockTransaction.id, { amount: 75 });
       expect(transactionRepo.save).toHaveBeenCalled();
+    });
+
+    it('should update categoryId', async () => {
+      const newCategoryId = '880e8400-e29b-41d4-a716-446655440000';
+      const txCopy = { ...mockTransaction };
+      transactionRepo.findOne
+        .mockResolvedValueOnce(txCopy)
+        .mockResolvedValueOnce({ ...txCopy, categoryId: newCategoryId });
+      transactionRepo.save.mockResolvedValue({
+        ...txCopy,
+        categoryId: newCategoryId,
+      });
+      accountRepo.findOne.mockResolvedValue(mockAccount);
+
+      await service.update(mockTransaction.id, {
+        categoryId: newCategoryId,
+      });
+      expect(txCopy.categoryId).toBe(newCategoryId);
     });
 
     it('should throw NotFoundException for non-existent id', async () => {

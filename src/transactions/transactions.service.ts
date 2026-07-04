@@ -42,7 +42,7 @@ export class TransactionsService {
   async findAll(filters: {
     type?: TransactionType;
     accountId?: string;
-    category?: string;
+    categoryId?: string;
     dateFrom?: string;
     dateTo?: string;
     page?: number;
@@ -56,7 +56,8 @@ export class TransactionsService {
     const qb = this.transactionRepo
       .createQueryBuilder('t')
       .leftJoinAndSelect('t.fromAccount', 'fromAccount')
-      .leftJoinAndSelect('t.toAccount', 'toAccount');
+      .leftJoinAndSelect('t.toAccount', 'toAccount')
+      .leftJoinAndSelect('t.category', 'category');
 
     if (filters.type) {
       qb.andWhere('t.type = :type', { type: filters.type });
@@ -69,8 +70,8 @@ export class TransactionsService {
       );
     }
 
-    if (filters.category) {
-      qb.andWhere('t.category = :category', { category: filters.category });
+    if (filters.categoryId) {
+      qb.andWhere('t.category_id = :categoryId', { categoryId: filters.categoryId });
     }
 
     if (filters.dateFrom) {
@@ -107,7 +108,7 @@ export class TransactionsService {
   async findOne(id: string): Promise<Transaction> {
     const transaction = await this.transactionRepo.findOne({
       where: { id },
-      relations: ['fromAccount', 'toAccount'],
+      relations: ['fromAccount', 'toAccount', 'category'],
     });
     if (!transaction) {
       throw new NotFoundException(`Transaction with id "${id}" not found`);
@@ -133,7 +134,7 @@ export class TransactionsService {
       fromAccountId: dto.fromAccountId || null,
       toAccountId: dto.toAccountId || null,
       date: dto.date,
-      category: dto.category || null,
+      categoryId: dto.categoryId || null,
       description: dto.description || null,
     });
 
@@ -160,7 +161,7 @@ export class TransactionsService {
     if (dto.toAccountId !== undefined)
       transaction.toAccountId = dto.toAccountId;
     if (dto.date !== undefined) transaction.date = dto.date;
-    if (dto.category !== undefined) transaction.category = dto.category;
+    if (dto.categoryId !== undefined) transaction.categoryId = dto.categoryId;
     if (dto.description !== undefined)
       transaction.description = dto.description;
 

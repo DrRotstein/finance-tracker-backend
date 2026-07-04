@@ -11,23 +11,11 @@ import {
   HttpStatus,
 } from '@nestjs/common';
 import { RelationsService } from './relations.service';
-import {
-  CreateTransferPairDto,
-  CreateGroupDto,
-  AddMemberDto,
-  QueryRelationDto,
-  QueryOutstandingDto,
-} from './dto';
+import { CreateGroupDto, AddMemberDto, QueryRelationDto } from './dto';
 
 @Controller('relations')
 export class RelationsController {
   constructor(private readonly relationsService: RelationsService) {}
-
-  @Post('transfer-pair')
-  @HttpCode(HttpStatus.CREATED)
-  async createTransferPair(@Body() dto: CreateTransferPairDto) {
-    return this.relationsService.createTransferPair(dto);
-  }
 
   @Post('group')
   @HttpCode(HttpStatus.CREATED)
@@ -38,11 +26,6 @@ export class RelationsController {
   @Get()
   async findAll(@Query() query: QueryRelationDto) {
     return this.relationsService.findAll(query.type);
-  }
-
-  @Get('outstanding')
-  async findOutstanding(@Query() query: QueryOutstandingDto) {
-    return this.relationsService.findOutstanding(query.account_id);
   }
 
   @Get(':id')

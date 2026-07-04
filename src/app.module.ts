@@ -6,6 +6,7 @@ import { AppService } from './app.service';
 import { AccountsModule } from './accounts/accounts.module';
 import { TransactionsModule } from './transactions/transactions.module';
 import { RelationsModule } from './relations/relations.module';
+import { CategoriesModule } from './categories/categories.module';
 
 @Module({
   imports: [
@@ -23,6 +24,7 @@ import { RelationsModule } from './relations/relations.module';
     AccountsModule,
     TransactionsModule,
     RelationsModule,
+    CategoriesModule,
   ],
   controllers: [AppController],
   providers: [
