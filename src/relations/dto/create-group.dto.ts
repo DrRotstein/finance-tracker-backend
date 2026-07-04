@@ -3,18 +3,17 @@ import {
   IsString,
   MaxLength,
   IsArray,
-  ArrayMinSize,
-  IsNotEmpty,
+  IsOptional,
 } from 'class-validator';
 
 export class CreateGroupDto {
+  @IsOptional()
   @IsString()
-  @IsNotEmpty()
   @MaxLength(100)
-  label: string;
+  label?: string;
 
+  @IsOptional()
   @IsArray()
-  @ArrayMinSize(1)
   @IsUUID('all', { each: true })
-  transactionIds: string[];
+  transactionIds?: string[];
 }

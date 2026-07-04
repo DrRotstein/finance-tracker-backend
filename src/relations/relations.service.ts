@@ -94,8 +94,10 @@ export class RelationsService {
   }
 
   async createGroup(dto: CreateGroupDto): Promise<TransactionRelation> {
+    const transactionIds = dto.transactionIds || [];
+
     // Validate all transactions exist
-    for (const txId of dto.transactionIds) {
+    for (const txId of transactionIds) {
       const tx = await this.transactionRepo.findOne({ where: { id: txId } });
       if (!tx) {
         throw new NotFoundException(`Transaction "${txId}" not found`);
@@ -105,12 +107,12 @@ export class RelationsService {
     // Create relation
     const relation = this.relationRepo.create({
       type: RelationType.GROUP,
-      label: dto.label,
+      label: dto.label || null,
     });
     const savedRelation = await this.relationRepo.save(relation);
 
     // Create members, all with role 'member'
-    for (const txId of dto.transactionIds) {
+    for (const txId of transactionIds) {
       const memberEntity = this.memberRepo.create({
         relationId: savedRelation.id,
         transactionId: txId,
