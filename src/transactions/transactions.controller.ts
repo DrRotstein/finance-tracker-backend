@@ -77,8 +77,9 @@ export class TransactionsController {
   }
 
   @Delete(':id')
-  @HttpCode(HttpStatus.NO_CONTENT)
+  @HttpCode(HttpStatus.OK)
   async remove(@Param('id', ParseUUIDPipe) id: string) {
     await this.transactionsService.remove(id);
+    return { message: 'Transaction deleted successfully' };
   }
 }

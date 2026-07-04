@@ -17,6 +17,12 @@ import { CreateGroupDto, AddMemberDto, QueryRelationDto } from './dto';
 export class RelationsController {
   constructor(private readonly relationsService: RelationsService) {}
 
+  @Post()
+  @HttpCode(HttpStatus.CREATED)
+  async create(@Body() dto: CreateGroupDto) {
+    return this.relationsService.createGroup(dto);
+  }
+
   @Post('group')
   @HttpCode(HttpStatus.CREATED)
   async createGroup(@Body() dto: CreateGroupDto) {
