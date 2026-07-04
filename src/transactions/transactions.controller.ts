@@ -32,7 +32,7 @@ export class TransactionsController {
     return this.transactionsService.findAll({
       type: query.type,
       accountId: query.account_id,
-      category: query.category,
+      categoryId: query.category_id,
       dateFrom: query.date_from,
       dateTo: query.date_to,
       page: query.page,
